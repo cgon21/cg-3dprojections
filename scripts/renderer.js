@@ -71,6 +71,45 @@ class Renderer {
         //     * project to 2D
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
+        
+        let prp = this.scene.view.prp;
+        let srp = this.scene.view.srp;
+        let vup = this.scene.view.vup;
+        let clip = this.scene.view.clip;
+        let scale = new Matrix(4, 4);
+        CG.mat4x4Scale(scale, 100, 100, 100);
+        let translate = new Matrix(4, 4);
+        CG.mat4x4Translate(translate, 100, 100, 0);
+        let transformMat = CG.mat4x4Perspective(prp, srp, vup, clip);
+        console.log(transformMat);
+        let newVertices = [];
+        this.scene.models[0].vertices.forEach((vertex) => {
+            let newVertex = Matrix.multiply([translate, scale, transformMat, vertex]);
+            
+            let newVertexCartX = newVertex.x / newVertex.w;
+            let newVertexCartY = newVertex.y / newVertex.w;
+
+
+            let newVertexCart = [newVertexCartX, newVertexCartY];
+            newVertices.push(newVertexCart);
+        })
+        console.log(newVertices);
+        
+
+
+        this.scene.models[0].edges.forEach((edge) => {
+            console.log("test");
+            for (let i = 0; i < edge.length - 1; i++) {
+                let x = edge[i];
+                let y = edge[i + 1];
+                console.log("lineX: " + newVertices[x][0] + ", " + newVertices[x][1]);
+                console.log("lineY: " + newVertices[y][0] + ", " + newVertices[y][1]);
+                this.drawLine(newVertices[x][0], newVertices[x][1], newVertices[y][0], newVertices[y][1]);
+            }
+        })
+        //drawLine(x0, y0, x1, y1);
+
+
     }
 
     // Get outcode for a vertex

@@ -52,8 +52,17 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     ];
 
     // compute transform
-    let transform = Matrix.multiply([scaleMat, shearMat, rotateMat, translateMat]);
-    return transform;
+    let nPer = Matrix.multiply([scaleMat, shearMat, rotateMat, translateMat]);
+
+    // Mper matrix
+    let mPer = new Matrix(4, 4);
+    mPer.values = [
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, -1, 0],
+    ];
+    return Matrix.multiply([mPer, nPer]);
 }
 
 // create a 4x4 matrix to project a perspective image on the z=-1 plane
