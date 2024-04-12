@@ -44,7 +44,7 @@ fourth component of vector (null if less than 4 components
 ### Methods
 `magnitude()`
 
-Returns the megnitude of the vector
+Returns the magnitude of the vector
 
 **Example:**
 ```

@@ -1,12 +1,12 @@
 import * as CG from './transforms.js';
 import { Matrix, Vector } from "./matrix.js";
 
-const LEFT =   32; // binary 100000
-const RIGHT =  16; // binary 010000
+const LEFT = 32; // binary 100000
+const RIGHT = 16; // binary 010000
 const BOTTOM = 8;  // binary 001000
-const TOP =    4;  // binary 000100
-const FAR =    2;  // binary 000010
-const NEAR =   1;  // binary 000001
+const TOP = 4;  // binary 000100
+const FAR = 2;  // binary 000010
+const NEAR = 1;  // binary 000001
 const FLOAT_EPSILON = 0.000001;
 
 class Renderer {
@@ -32,27 +32,27 @@ class Renderer {
     rotateLeft() {
 
     }
-    
+
     //
     rotateRight() {
 
     }
-    
+
     //
     moveLeft() {
 
     }
-    
+
     //
     moveRight() {
 
     }
-    
+
     //
     moveBackward() {
 
     }
-    
+
     //
     moveForward() {
 
@@ -71,45 +71,31 @@ class Renderer {
         //     * project to 2D
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
-        
-        let prp = this.scene.view.prp;
-        let srp = this.scene.view.srp;
-        let vup = this.scene.view.vup;
-        let clip = this.scene.view.clip;
-        let scale = new Matrix(4, 4);
-        CG.mat4x4Scale(scale, 100, 100, 100);
-        let translate = new Matrix(4, 4);
-        CG.mat4x4Translate(translate, 100, 100, 0);
+
+        const { prp, srp, vup, clip } = this.scene.view;
+
         let transformMat = CG.mat4x4Perspective(prp, srp, vup, clip);
-        console.log(transformMat);
-        let newVertices = [];
-        this.scene.models[0].vertices.forEach((vertex) => {
-            let newVertex = Matrix.multiply([translate, scale, transformMat, vertex]);
-            
-            let newVertexCartX = newVertex.x / newVertex.w;
-            let newVertexCartY = newVertex.y / newVertex.w;
 
+        // Transform, project, and draw each model
+        this.scene.models.forEach(model => {
+            // Transform and project vertices
+            let newVertices = model.vertices.map(vertex => {
+                let newVertex = Matrix.multiply([transformMat, vertex]);
+                let newVertexCartX = (newVertex.x / newVertex.w + 1) * this.canvas.width / 2;
+                let newVertexCartY = (newVertex.y / newVertex.w + 1) * this.canvas.height / 2;
+                return { x: newVertexCartX, y: newVertexCartY };
+            });
 
-            let newVertexCart = [newVertexCartX, newVertexCartY];
-            newVertices.push(newVertexCart);
-        })
-        console.log(newVertices);
-        
-
-
-        this.scene.models[0].edges.forEach((edge) => {
-            console.log("test");
-            for (let i = 0; i < edge.length - 1; i++) {
-                let x = edge[i];
-                let y = edge[i + 1];
-                console.log("lineX: " + newVertices[x][0] + ", " + newVertices[x][1]);
-                console.log("lineY: " + newVertices[y][0] + ", " + newVertices[y][1]);
-                this.drawLine(newVertices[x][0], newVertices[x][1], newVertices[y][0], newVertices[y][1]);
-            }
-        })
-        //drawLine(x0, y0, x1, y1);
-
-
+            // Draw edges based on the projected vertices
+            model.edges.forEach((edge) => {
+                for (let i = 0; i < edge.length - 1; i++) {
+                    let startVertex = newVertices[edge[i]];
+                    let endVertex = newVertices[edge[i + 1]];
+                    // Draw line from startVertex to endVertex
+                    this.drawLine(startVertex.x, startVertex.y, endVertex.x, endVertex.y);
+                }
+            });
+        });
     }
 
     // Get outcode for a vertex
@@ -144,13 +130,13 @@ class Renderer {
     // z_min:        float (near clipping plane in canonical view volume)
     clipLinePerspective(line, z_min) {
         let result = null;
-        let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
+        let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);
         let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
         let out0 = this.outcodePerspective(p0, z_min);
         let out1 = this.outcodePerspective(p1, z_min);
-        
+
         // TODO: implement clipping here!
-        
+
         return result;
     }
 
@@ -193,36 +179,116 @@ class Renderer {
     processScene(scene) {
         let processed = {
             view: {
-                prp: CG.Vector3(scene.view.prp[0], scene.view.prp[1], scene.view.prp[2]),
-                srp: CG.Vector3(scene.view.srp[0], scene.view.srp[1], scene.view.srp[2]),
-                vup: CG.Vector3(scene.view.vup[0], scene.view.vup[1], scene.view.vup[2]),
-                clip: [...scene.view.clip]
+                prp: CG.Vector3(
+                    scene.view.prp[0],
+                    scene.view.prp[1],
+                    scene.view.prp[2]
+                ),
+                srp: CG.Vector3(
+                    scene.view.srp[0],
+                    scene.view.srp[1],
+                    scene.view.srp[2]
+                ),
+                vup: CG.Vector3(
+                    scene.view.vup[0],
+                    scene.view.vup[1],
+                    scene.view.vup[2]
+                ),
+                clip: [...scene.view.clip],
             },
-            models: []
+            models: [],
         };
 
         for (let i = 0; i < scene.models.length; i++) {
-            let model = { type: scene.models[i].type };
-            if (model.type === 'generic') {
+            let model = { type: scene.models[i].type, vertices: [], edges: [] };
+            if (model.type === "generic") {
                 model.vertices = [];
                 model.edges = JSON.parse(JSON.stringify(scene.models[i].edges));
                 for (let j = 0; j < scene.models[i].vertices.length; j++) {
-                    model.vertices.push(CG.Vector4(scene.models[i].vertices[j][0],
-                                                   scene.models[i].vertices[j][1],
-                                                   scene.models[i].vertices[j][2],
-                                                   1));
-                    if (scene.models[i].hasOwnProperty('animation')) {
-                        model.animation = JSON.parse(JSON.stringify(scene.models[i].animation));
+                    model.vertices.push(
+                        CG.Vector4(
+                            scene.models[i].vertices[j][0],
+                            scene.models[i].vertices[j][1],
+                            scene.models[i].vertices[j][2],
+                            1
+                        )
+                    );
+                    if (scene.models[i].hasOwnProperty("animation")) {
+                        model.animation = JSON.parse(
+                            JSON.stringify(scene.models[i].animation)
+                        );
                     }
                 }
-            }
-            else {
-                model.center = Vector4(scene.models[i].center[0],
-                                       scene.models[i].center[1],
-                                       scene.models[i].center[2],
-                                       1);
+            } else if (model.type === "cube") {
+                const { center, width, height, depth } = scene.models[i];
+                const [cube_x, cube_y, cube_z] = center;
+                const width_half = width / 2, height_half = height / 2, depth_half = depth / 2;
+
+                model.vertices = [
+                    // Top
+                    CG.Vector4(cube_x - width_half, cube_y + height_half, cube_z + depth_half, 1), // left-front
+                    CG.Vector4(cube_x - width_half, cube_y + height_half, cube_z - depth_half, 1), // left-back
+                    CG.Vector4(cube_x + width_half, cube_y + height_half, cube_z - depth_half, 1), // right-back
+                    CG.Vector4(cube_x + width_half, cube_y + height_half, cube_z + depth_half, 1), // right-front
+
+                    // Bottom
+                    CG.Vector4(cube_x - width_half, cube_y - height_half, cube_z + depth_half, 1), // left-front
+                    CG.Vector4(cube_x - width_half, cube_y - height_half, cube_z - depth_half, 1), // left-back
+                    CG.Vector4(cube_x + width_half, cube_y - height_half, cube_z - depth_half, 1), // right-back
+                    CG.Vector4(cube_x + width_half, cube_y - height_half, cube_z + depth_half, 1), // right-front
+                ];
+                model.edges = [
+                    // Top
+                    [0, 1],
+                    [1, 2],
+                    [2, 3],
+                    [3, 0],
+
+                    // Bottom
+                    [4, 5],
+                    [5, 6],
+                    [6, 7],
+                    [7, 4],
+
+                    // Sides
+                    [0, 4],
+                    [1, 5],
+                    [2, 6],
+                    [3, 7],
+                ];
+            } else if (model.type === "cylinder") {
+                const { center, radius, height, sides } = scene.models[i];
+                const [cylinder_x, cylinder_y, cylinder_z] = center;
+                const hh = height / 2;
+                for (let j = 0; j < sides; j++) {
+                    const angle = (2 * Math.PI * j) / sides;
+                    const x = cylinder_x + radius * Math.cos(angle);
+                    const z = cylinder_z + radius * Math.sin(angle);
+
+                    model.vertices.push(CG.Vector4(x, cylinder_y - hh, z, 1)); // Bottom circle vertex
+                    model.vertices.push(CG.Vector4(x, cylinder_y + hh, z, 1)); // Top circle vertex
+                    model.edges.push([2 * j, 2 * j + 1]); // Side edges
+
+                    if (j > 0) {
+                        model.edges.push([2 * j - 2, 2 * j]); // Connect bottom circle vertices
+                        model.edges.push([2 * j - 1, 2 * j + 1]); // Connect top circle vertices
+                    }
+                }
+                model.edges.push([2 * (sides - 1), 0]); // Bottom circle
+                model.edges.push([2 * (sides - 1) + 1, 1]); // Top circle
+            } else {
+                model.center = Vector4(
+                    scene.models[i].center[0],
+                    scene.models[i].center[1],
+                    scene.models[i].center[2],
+                    1
+                );
                 for (let key in scene.models[i]) {
-                    if (scene.models[i].hasOwnProperty(key) && key !== 'type' && key != 'center') {
+                    if (
+                        scene.models[i].hasOwnProperty(key) &&
+                        key !== "type" &&
+                        key != "center"
+                    ) {
                         model[key] = JSON.parse(JSON.stringify(scene.models[i][key]));
                     }
                 }
@@ -234,22 +300,22 @@ class Renderer {
 
         return processed;
     }
-    
+
     // x0:           float (x coordinate of p0)
     // y0:           float (y coordinate of p0)
     // x1:           float (x coordinate of p1)
     // y1:           float (y coordinate of p1)
     drawLine(x0, y0, x1, y1) {
-        this.ctx.strokeStyle = '#000000';
+        this.ctx.strokeStyle = "#000000";
         this.ctx.beginPath();
         this.ctx.moveTo(x0, y0);
         this.ctx.lineTo(x1, y1);
         this.ctx.stroke();
 
-        this.ctx.fillStyle = '#FF0000';
+        this.ctx.fillStyle = "#FF0000";
         this.ctx.fillRect(x0 - 2, y0 - 2, 4, 4);
         this.ctx.fillRect(x1 - 2, y1 - 2, 4, 4);
     }
-};
+}
 
 export { Renderer };
