@@ -7,14 +7,14 @@
   },
   "models": [
     {
-      "type": "cube",
+      "type": "cone",
       "center": [-14, 4, -10],
-      "width": 8,
-      "height": 8,
-      "depth": 8
+      "radius": 5,
+      "height": 10,
+      "sides": 20
     },
     {
-      "type": "cylinder",
+      "type": "cone",
       "center": [0, 3, -14],
       "radius": 3.5,
       "height": 7,

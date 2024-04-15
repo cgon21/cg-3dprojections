@@ -12,7 +12,7 @@ let app = createApp({
             renderer: ref({})
         }
     },
-    
+
     methods: {
         loadNewScene() {
             let scene_file = document.getElementById('scene_file');
@@ -61,16 +61,16 @@ let initial_scene = {
         {
             type: 'generic',
             vertices: [
-                [ 0.0,  0.0, -30.0],
-                [20.0,  0.0, -30.0],
+                [0.0, 0.0, -30.0],
+                [20.0, 0.0, -30.0],
                 [20.0, 12.0, -30.0],
                 [10.0, 20.0, -30.0],
-                [ 0.0, 12.0, -30.0],
-                [ 0.0,  0.0, -60.0],
-                [20.0,  0.0, -60.0],
+                [0.0, 12.0, -30.0],
+                [0.0, 0.0, -60.0],
+                [20.0, 0.0, -60.0],
                 [20.0, 12.0, -60.0],
                 [10.0, 20.0, -60.0],
-                [ 0.0, 12.0, -60.0]
+                [0.0, 12.0, -60.0]
             ],
             edges: [
                 [0, 1, 2, 3, 4, 0],
@@ -86,7 +86,7 @@ let initial_scene = {
 };
 
 document.addEventListener('keydown', app.onKeyDown, false);
-    
+
 app.renderer = new Renderer(app.view, initial_scene);
 window.requestAnimationFrame((timestamp) => {
     app.renderer.animate(timestamp);

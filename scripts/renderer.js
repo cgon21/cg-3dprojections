@@ -260,6 +260,7 @@ class Renderer {
                 const { center, radius, height, sides } = scene.models[i];
                 const [cylinder_x, cylinder_y, cylinder_z] = center;
                 const hh = height / 2;
+
                 for (let j = 0; j < sides; j++) {
                     const angle = (2 * Math.PI * j) / sides;
                     const x = cylinder_x + radius * Math.cos(angle);
@@ -276,7 +277,58 @@ class Renderer {
                 }
                 model.edges.push([2 * (sides - 1), 0]); // Bottom circle
                 model.edges.push([2 * (sides - 1) + 1, 1]); // Top circle
-            } else {
+            }
+            else if (model.type === "cone") {
+                const { center, radius, height, sides } = scene.models[i];
+                const [cone_x, cone_y, cone_z] = center;
+                const hh = height;
+
+                // top point of the cone
+                model.vertices.push(CG.Vector4(cone_x, cone_y + hh, cone_z, 1));
+
+                for (let j = 0; j < sides; j++) {
+                    const angle = (2 * Math.PI * j) / sides;
+                    const x = cone_x + radius * Math.cos(angle);
+                    const z = cone_z + radius * Math.sin(angle);
+
+                    model.vertices.push(CG.Vector4(x, cone_y, z, 1)); // Base circle vertices
+                    model.edges.push([0, j + 1]); // Connect point to each base vertex
+
+                    if (j > 0) {
+                        model.edges.push([j, j + 1]); // Connect base circle vertices
+                    }
+                }
+                model.edges.push([sides, 1]);
+            }
+            else if (model.type === "sphere") {
+                const { center, radius, slices, stacks } = scene.models[i];
+                const [sphere_x, sphere_y, sphere_z] = center;
+
+                // iterate through stacks from bottom to top
+                for (let stack = 0; stack <= stacks; stack++) {
+                    const phi = Math.PI * stack / stacks; // angle from the vertical center (0 to pi, top to bottom)
+                    const y = sphere_y + radius * Math.cos(phi); // height for the given stack
+
+                    // circle for each layer
+                    for (let slice = 0; slice <= slices; slice++) {
+                        const theta = 2 * Math.PI * slice / slices; // angle for vertex of slice
+                        const x = sphere_x + radius * Math.sin(phi) * Math.cos(theta); // x value of vertex
+                        const z = sphere_z + radius * Math.sin(phi) * Math.sin(theta); // z value of vertex
+
+                        model.vertices.push(CG.Vector4(x, y, z, 1));
+
+                        // connect the vertices of the current and previous slice
+                        if (stack < stacks && slice < slices) {
+                            let a = stack * (slices + 1) + slice; // current slice vertex
+                            let b = a + slices + 1; // previous slice vertex
+
+                            model.edges.push([a, a + 1]); // line between verticies on same slice
+                            model.edges.push([a, b]); // line between current and previous slice vertices
+                        }
+                    }
+                }
+            }
+            else {
                 model.center = Vector4(
                     scene.models[i].center[0],
                     scene.models[i].center[1],

@@ -7,18 +7,18 @@
   },
   "models": [
     {
-      "type": "cube",
+      "type": "sphere",
       "center": [-14, 4, -10],
-      "width": 8,
-      "height": 8,
-      "depth": 8
+      "radius": 5,
+      "slices": 10,
+      "stacks": 7
     },
     {
-      "type": "cylinder",
+      "type": "sphere",
       "center": [0, 3, -14],
       "radius": 3.5,
-      "height": 7,
-      "sides": 12
+      "slices": 8,
+      "stacks": 5
     }
   ]
 }
