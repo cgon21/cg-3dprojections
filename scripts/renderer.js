@@ -8,6 +8,7 @@ const TOP = 4;  // binary 000100
 const FAR = 2;  // binary 000010
 const NEAR = 1;  // binary 000001
 const FLOAT_EPSILON = 0.000001;
+const step = 1;
 
 class Renderer {
     // canvas:              object ({id: __, width: __, height: __})
@@ -26,6 +27,9 @@ class Renderer {
     //
     updateTransforms(time, delta_time) {
         // TODO: update any transformations needed for animation
+        const { prp, srp, vup, clip } = this.scene.view;
+        this.transformMat = CG.mat4x4Perspective(prp, srp, vup, clip);
+        this.draw();
     }
 
     //
@@ -38,25 +42,34 @@ class Renderer {
 
     }
 
-    //
+    // Negative direction on x-axis
     moveLeft() {
-
+        this.scene.view.prp.x -= step;
+        this.scene.view.srp.x -= step;
+        this.updateTransforms();
     }
 
-    //
+    // Positive direction on x-axis
     moveRight() {
-
+        this.scene.view.prp.x += step;
+        this.scene.view.srp.x += step;
+        this.updateTransforms();
     }
 
-    //
+    // Negative direction on z-axis
     moveBackward() {
-
+        this.scene.view.prp.z -= step;
+        this.scene.view.srp.z -= step;
+        this.updateTransforms();
     }
 
-    //
+    // Positive direction on z-axis
     moveForward() {
-
+        this.scene.view.prp.z += step;
+        this.scene.view.srp.z += step;
+        this.updateTransforms();
     }
+
 
     //
     draw() {
