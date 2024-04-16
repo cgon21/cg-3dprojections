@@ -34,18 +34,17 @@ class Renderer {
 
     //
     rotateLeft() {
-        const rotationAngle = 3 * Math.PI / 180;
-        const cosTheta = Math.cos(rotationAngle);
-        const sinTheta = Math.sin(rotationAngle);
+        const rotationAngle = 3 * Math.PI / 180; // rotate by 3 degrees each times
 
         let prp = this.scene.view.prp;
         let srp = this.scene.view.srp;
 
-        const deltaX = prp.x - srp.x;
-        const deltaZ = prp.z - srp.z;
+        const deltaX = prp.x - srp.x; // difference in x shouldn't change
+        const deltaZ = prp.z - srp.z; // difference in z shouldn't change
 
-        prp.x = srp.x + deltaX * cosTheta - deltaZ * sinTheta;
-        prp.z = srp.z + deltaX * sinTheta + deltaZ * cosTheta;
+        // Rotate prp around the y-axis
+        prp.x = srp.x + deltaX * Math.cos(rotationAngle) - deltaZ * Math.sin(rotationAngle);
+        prp.z = srp.z + deltaX * Math.sin(rotationAngle) + deltaZ * Math.cos(rotationAngle);
 
         this.updateTransforms();
     }
@@ -53,18 +52,16 @@ class Renderer {
     //
     rotateRight() {
         const rotationAngle = -3 * Math.PI / 180;
-        const cosTheta = Math.cos(rotationAngle);
-        const sinTheta = Math.sin(rotationAngle);
 
-        // Rotate prp around the y-axis
         let prp = this.scene.view.prp;
         let srp = this.scene.view.srp;
 
-        const deltaX = prp.x - srp.x;
-        const deltaZ = prp.z - srp.z;
+        const deltaX = prp.x - srp.x; // difference in x shouldn't change
+        const deltaZ = prp.z - srp.z; // difference in z shouldn't change
 
-        prp.x = srp.x + deltaX * cosTheta - deltaZ * sinTheta;
-        prp.z = srp.z + deltaX * sinTheta + deltaZ * cosTheta;
+        // Rotate prp around the y-axis
+        prp.x = srp.x + deltaX * Math.cos(rotationAngle) - deltaZ * Math.sin(rotationAngle);
+        prp.z = srp.z + deltaX * Math.sin(rotationAngle) + deltaZ * Math.cos(rotationAngle);
 
         this.updateTransforms();
     }
