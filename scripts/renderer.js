@@ -8,7 +8,7 @@ const TOP = 4;  // binary 000100
 const FAR = 2;  // binary 000010
 const NEAR = 1;  // binary 000001
 const FLOAT_EPSILON = 0.000001;
-const step = 1;
+const step = 5;
 
 class Renderer {
     // canvas:              object ({id: __, width: __, height: __})
@@ -26,72 +26,216 @@ class Renderer {
 
     //
     updateTransforms(time, delta_time) {
-        // TODO: update any transformations needed for animation
         const { prp, srp, vup, clip } = this.scene.view;
-        this.transformMat = CG.mat4x4Perspective(prp, srp, vup, clip);
+        
+        this.draw();
+    }
+    //
+    rotateLeft() {
+        let srp = this.scene.view.srp;
+        let prp = this.scene.view.prp;
+        let vup = this.scene.view.vup;
+        // create n-axis, u-axis, v-axis, CW, and DOP
+        let n = new Vector(3);
+        n = prp.subtract(srp);
+        n.normalize();
+
+        let u = new Vector(3);
+        u = vup.cross(n);
+        u.normalize();
+
+        let v = new Vector(3);
+        v = n.cross(u);
+
+        // 1. translate PRP to origin
+        let translateMat = new Matrix(4, 4);
+        CG.mat4x4Translate(translateMat, -prp.x, -prp.y, -prp.z);
+
+        console.log(srp);
+        // 2. rotate VRC such that (u,v,n) align with (x,y,z)
+        let rotateMat = new Matrix(4, 4);
+        rotateMat.values = [
+            [u.x, u.y, u.z, 0],
+            [v.x, v.y, v.z, 0],
+            [n.x, n.y, n.z, 0],
+            [0, 0, 0, 1]
+        ];
+
+        // 3. rotate SRP around v-axis (aligned with y-axis)
+        let rotateYMat = new Matrix(4, 4);
+        CG.mat4x4RotateY(rotateYMat, step * Math.PI / 180);
+        let srp4 = CG.Vector4(srp.x, srp.y, srp.z, 1);
+        let rotatedSRP = Matrix.multiply([rotateYMat, rotateMat, translateMat, srp4]);
+
+        // 4. undo step 2
+        let invrseRotateMat = rotateMat.inverse();
+
+        // 5. undo step 1
+        let inverseTranslateMat = translateMat.inverse();
+
+        // 6. multiply steps 5 and 6
+        let finalSRP = Matrix.multiply([inverseTranslateMat, invrseRotateMat, rotatedSRP]);
+        this.scene.view.srp = CG.Vector3(
+            finalSRP.x / finalSRP.w, 
+            finalSRP.y / finalSRP.w, 
+            finalSRP.z / finalSRP.w
+        );
+
+        // draw new scene
         this.draw();
     }
 
     //
-    rotateLeft() {
-        const rotationAngle = 3 * Math.PI / 180; // rotate by 3 degrees each times
-
-        let prp = this.scene.view.prp;
-        let srp = this.scene.view.srp;
-
-        const deltaX = prp.x - srp.x; // difference in x shouldn't change
-        const deltaZ = prp.z - srp.z; // difference in z shouldn't change
-
-        // Rotate prp around the y-axis
-        prp.x = srp.x + deltaX * Math.cos(rotationAngle) - deltaZ * Math.sin(rotationAngle);
-        prp.z = srp.z + deltaX * Math.sin(rotationAngle) + deltaZ * Math.cos(rotationAngle);
-
-        this.updateTransforms();
-    }
-
-    //
     rotateRight() {
-        const rotationAngle = -3 * Math.PI / 180;
-
-        let prp = this.scene.view.prp;
         let srp = this.scene.view.srp;
+        let prp = this.scene.view.prp;
+        let vup = this.scene.view.vup;
+        // create n-axis, u-axis, v-axis, CW, and DOP
+        let n = new Vector(3);
+        n = prp.subtract(srp);
+        n.normalize();
 
-        const deltaX = prp.x - srp.x; // difference in x shouldn't change
-        const deltaZ = prp.z - srp.z; // difference in z shouldn't change
+        let u = new Vector(3);
+        u = vup.cross(n);
+        u.normalize();
 
-        // Rotate prp around the y-axis
-        prp.x = srp.x + deltaX * Math.cos(rotationAngle) - deltaZ * Math.sin(rotationAngle);
-        prp.z = srp.z + deltaX * Math.sin(rotationAngle) + deltaZ * Math.cos(rotationAngle);
+        let v = new Vector(3);
+        v = n.cross(u);
 
-        this.updateTransforms();
+        // 1. translate PRP to origin
+        let translateMat = new Matrix(4, 4);
+        CG.mat4x4Translate(translateMat, -prp.x, -prp.y, -prp.z);
+
+        console.log(srp);
+        // 2. rotate VRC such that (u,v,n) align with (x,y,z)
+        let rotateMat = new Matrix(4, 4);
+        rotateMat.values = [
+            [u.x, u.y, u.z, 0],
+            [v.x, v.y, v.z, 0],
+            [n.x, n.y, n.z, 0],
+            [0, 0, 0, 1]
+        ];
+
+        // 3. rotate SRP around v-axis (aligned with y-axis)
+        let rotateYMat = new Matrix(4, 4);
+        CG.mat4x4RotateY(rotateYMat, -step * Math.PI / 180);
+        let srp4 = CG.Vector4(srp.x, srp.y, srp.z, 1);
+        let rotatedSRP = Matrix.multiply([rotateYMat, rotateMat, translateMat, srp4]);
+
+        // 4. undo step 2
+        let invrseRotateMat = rotateMat.inverse();
+
+        // 5. undo step 1
+        let inverseTranslateMat = translateMat.inverse();
+
+        // 6. multiply steps 5 and 6
+        let finalSRP = Matrix.multiply([inverseTranslateMat, invrseRotateMat, rotatedSRP]);
+        this.scene.view.srp = CG.Vector3(
+            finalSRP.x / finalSRP.w, 
+            finalSRP.y / finalSRP.w, 
+            finalSRP.z / finalSRP.w
+        );
+        
+        // draw new scene
+        this.draw();
     }
 
-    // Negative direction on x-axis
+    // Negative direction on u-axis
     moveLeft() {
-        this.scene.view.prp.x -= step;
-        this.scene.view.srp.x -= step;
-        this.updateTransforms();
+        let srp = this.scene.view.srp;
+        let prp = this.scene.view.prp;
+        let vup = this.scene.view.vup;
+        // create n-axis and u-axis
+        let n = new Vector(3);
+        n = prp.subtract(srp);
+        n.normalize();
+
+        let u = new Vector(3);
+        u = vup.cross(n);
+        u.normalize();
+
+        // update prp and srp
+        this.scene.view.prp.x -= u.x * step;
+        this.scene.view.srp.x -= u.x * step;
+        this.scene.view.prp.y -= u.y * step;
+        this.scene.view.srp.y -= u.y * step;
+        this.scene.view.prp.z -= u.z * step;
+        this.scene.view.srp.z -= u.z * step;
+
+        // draw new scene
+        this.draw();
     }
 
-    // Positive direction on x-axis
+    // Positive direction on u-axis
     moveRight() {
-        this.scene.view.prp.x += step;
-        this.scene.view.srp.x += step;
-        this.updateTransforms();
+        let srp = this.scene.view.srp;
+        let prp = this.scene.view.prp;
+        let vup = this.scene.view.vup;
+
+        // create n-axis and u-axis
+        let n = new Vector(3);
+        n = prp.subtract(srp);
+        n.normalize();
+
+        let u = new Vector(3);
+        u = vup.cross(n);
+        u.normalize();
+
+        // update prp and srp
+        this.scene.view.prp.x += u.x * step;
+        this.scene.view.srp.x += u.x * step;
+        this.scene.view.prp.y += u.y * step;
+        this.scene.view.srp.y += u.y * step;
+        this.scene.view.prp.z += u.z * step;
+        this.scene.view.srp.z += u.z * step;
+
+        // draw new scene
+        this.draw();
     }
 
-    // Negative direction on z-axis
+    // Negative direction on n-axis
     moveBackward() {
-        this.scene.view.prp.z -= step;
-        this.scene.view.srp.z -= step;
-        this.updateTransforms();
+        let srp = this.scene.view.srp;
+        let prp = this.scene.view.prp;
+
+        // create n-axis
+        let n = new Vector(3);
+        n = prp.subtract(srp);
+        n.normalize();
+
+        // update prp and srp
+        this.scene.view.prp.x += n.x * step;
+        this.scene.view.srp.x += n.x * step;
+        this.scene.view.prp.y += n.y * step;
+        this.scene.view.srp.y += n.y * step;
+        this.scene.view.prp.z += n.z * step;
+        this.scene.view.srp.z += n.z * step;
+
+        // draw new scene
+        this.draw();
     }
 
-    // Positive direction on z-axis
+    // Positive direction on n-axis
     moveForward() {
-        this.scene.view.prp.z += step;
-        this.scene.view.srp.z += step;
-        this.updateTransforms();
+        let srp = this.scene.view.srp;
+        let prp = this.scene.view.prp;
+
+        // create n-axis
+        let n = new Vector(3);
+        n = prp.subtract(srp);
+        n.normalize();
+
+
+        // update prp and srp
+        this.scene.view.prp.x -= n.x * step;
+        this.scene.view.srp.x -= n.x * step;
+        this.scene.view.prp.y -= n.y * step;
+        this.scene.view.srp.y -= n.y * step;
+        this.scene.view.prp.z -= n.z * step;
+        this.scene.view.srp.z -= n.z * step;
+
+        // draw new scene
+        this.draw();
     }
 
 
@@ -122,7 +266,6 @@ class Renderer {
                 let newVertexCartY = (newVertex.y / newVertex.w + 1) * this.canvas.height / 2;
                 return { x: newVertexCartX, y: newVertexCartY };
             });
-
             // Draw edges based on the projected vertices
             model.edges.forEach((edge) => {
                 for (let i = 0; i < edge.length - 1; i++) {
