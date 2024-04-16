@@ -18,7 +18,11 @@
       "center": [0, 3, -14],
       "radius": 3.5,
       "height": 7,
-      "sides": 12
+      "sides": 12,
+      "animation": {
+        "axis": "y",
+        "rps": 0.5
+      }
     }
   ]
 }
