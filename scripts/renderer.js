@@ -317,26 +317,26 @@ class Renderer {
                 const { center, radius, slices, stacks } = scene.models[i];
                 const [sphere_x, sphere_y, sphere_z] = center;
 
-                // iterate through stacks from bottom to top
+                // iterate through stacks from top to bottom
                 for (let stack = 0; stack <= stacks; stack++) {
-                    const phi = Math.PI * stack / stacks; // angle from the vertical center (0 to pi, top to bottom)
+                    const phi = Math.PI * stack / stacks; // angle for the horizontal stack
                     const y = sphere_y + radius * Math.cos(phi); // height for the given stack
 
                     // circle for each layer
                     for (let slice = 0; slice <= slices; slice++) {
-                        const theta = 2 * Math.PI * slice / slices; // angle for vertex of slice
+                        const theta = 2 * Math.PI * slice / slices; // angle for the vertical slices
                         const x = sphere_x + radius * Math.sin(phi) * Math.cos(theta); // x value of vertex
                         const z = sphere_z + radius * Math.sin(phi) * Math.sin(theta); // z value of vertex
 
                         model.vertices.push(CG.Vector4(x, y, z, 1));
 
-                        // connect the vertices of the current and previous slice
+                        // connect vertices within the same slice and with vertices in the corresponding position in the next stack
                         if (stack < stacks && slice < slices) {
-                            let a = stack * (slices + 1) + slice; // current slice vertex
-                            let b = a + slices + 1; // previous slice vertex
+                            let a = stack * (slices + 1) + slice; // current vertex within the slice
+                            let b = a + slices + 1; // vertex in the next stack directly above the current vertex
 
-                            model.edges.push([a, a + 1]); // line between verticies on same slice
-                            model.edges.push([a, b]); // line between current and previous slice vertices
+                            model.edges.push([a, a + 1]); // line between this vertices within the same slice
+                            model.edges.push([a, b]); // line between vertices in corresponding stack
                         }
                     }
                 }
