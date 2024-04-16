@@ -34,12 +34,39 @@ class Renderer {
 
     //
     rotateLeft() {
+        const rotationAngle = 3 * Math.PI / 180;
+        const cosTheta = Math.cos(rotationAngle);
+        const sinTheta = Math.sin(rotationAngle);
 
+        let prp = this.scene.view.prp;
+        let srp = this.scene.view.srp;
+
+        const deltaX = prp.x - srp.x;
+        const deltaZ = prp.z - srp.z;
+
+        prp.x = srp.x + deltaX * cosTheta - deltaZ * sinTheta;
+        prp.z = srp.z + deltaX * sinTheta + deltaZ * cosTheta;
+
+        this.updateTransforms();
     }
 
     //
     rotateRight() {
+        const rotationAngle = -3 * Math.PI / 180;
+        const cosTheta = Math.cos(rotationAngle);
+        const sinTheta = Math.sin(rotationAngle);
 
+        // Rotate prp around the y-axis
+        let prp = this.scene.view.prp;
+        let srp = this.scene.view.srp;
+
+        const deltaX = prp.x - srp.x;
+        const deltaZ = prp.z - srp.z;
+
+        prp.x = srp.x + deltaX * cosTheta - deltaZ * sinTheta;
+        prp.z = srp.z + deltaX * sinTheta + deltaZ * cosTheta;
+
+        this.updateTransforms();
     }
 
     // Negative direction on x-axis
@@ -79,7 +106,7 @@ class Renderer {
         // For each model
         //   * For each vertex
         //     * transform endpoints to canonical view volume
-        //   * For each line segment in each edge
+        //     * For each line segment in each edge
         //     * clip in 3D
         //     * project to 2D
         //     * translate/scale to viewport (i.e. window)
