@@ -48,7 +48,7 @@ class Renderer {
             if (axis.includes("z")) {
                 axisZ = 1;
             }
-            
+
 
             // find the center of the object
             let centerX = 0, centerY = 0, centerZ = 0;
@@ -72,7 +72,7 @@ class Renderer {
             for (let j = 0; j < vertices.length; j++) {
                 let cosTheta = Math.cos(angle);
                 let sinTheta = Math.sin(angle);
-                
+
                 // move each point back to center
                 let x = vertices[j].x - centerX;
                 let y = vertices[j].y - centerY;
@@ -91,7 +91,7 @@ class Renderer {
             // replace vertices array
             this.scene.models[i].vertices = vertices;
         }
-        
+
         this.draw();
     }
     //
@@ -140,8 +140,8 @@ class Renderer {
         // 6. multiply steps 5 and 6
         let finalSRP = Matrix.multiply([inverseTranslateMat, invrseRotateMat, rotatedSRP]);
         this.scene.view.srp = CG.Vector3(
-            finalSRP.x / finalSRP.w, 
-            finalSRP.y / finalSRP.w, 
+            finalSRP.x / finalSRP.w,
+            finalSRP.y / finalSRP.w,
             finalSRP.z / finalSRP.w
         );
 
@@ -195,11 +195,11 @@ class Renderer {
         // 6. multiply steps 5 and 6
         let finalSRP = Matrix.multiply([inverseTranslateMat, invrseRotateMat, rotatedSRP]);
         this.scene.view.srp = CG.Vector3(
-            finalSRP.x / finalSRP.w, 
-            finalSRP.y / finalSRP.w, 
+            finalSRP.x / finalSRP.w,
+            finalSRP.y / finalSRP.w,
             finalSRP.z / finalSRP.w
         );
-        
+
         // draw new scene
         this.draw();
     }
