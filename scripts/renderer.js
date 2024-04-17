@@ -316,23 +316,33 @@ class Renderer {
         //     * project to 2D
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
+
+        // Get the perspective transformation matrix for the current view
         const { prp, srp, vup, clip } = this.scene.view;
         let transformMat = CG.mat4x4Perspective(prp, srp, vup, clip);
-        // Transform, project, and draw each model
+
+        // For each model in the scene
         this.scene.models.forEach(model => {
-            // Transform and project vertices
+            // For each vertex in the model
             let newVertices = model.vertices.map(vertex => {
+                // Transform vertex to canonical view volume
                 let newVertex = Matrix.multiply([transformMat, vertex]);
+
+                // Project to 2D: divide by w and translate/scale to viewport (i.e., window)
                 let newVertexCartX = (newVertex.x / newVertex.w + 1) * this.canvas.width / 2;
                 let newVertexCartY = (newVertex.y / newVertex.w + 1) * this.canvas.height / 2;
+
+                // Return the transformed and projected vertex
                 return { x: newVertexCartX, y: newVertexCartY };
             });
-            // Draw edges based on the projected vertices
+
+            // For each line segment in each edge
             model.edges.forEach((edge) => {
                 for (let i = 0; i < edge.length - 1; i++) {
                     let startVertex = newVertices[edge[i]];
                     let endVertex = newVertices[edge[i + 1]];
-                    // Draw line from startVertex to endVertex
+
+                    // Draw the line segment on canvas
                     this.drawLine(startVertex.x, startVertex.y, endVertex.x, endVertex.y);
                 }
             });
