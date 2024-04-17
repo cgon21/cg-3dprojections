@@ -19,14 +19,78 @@ class Renderer {
         this.canvas.height = canvas.height;
         this.ctx = this.canvas.getContext('2d');
         this.scene = this.processScene(scene);
-        this.enable_animation = false;  // <-- disabled for easier debugging; enable for animation
+        this.enable_animation = true;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
     }
 
     //
     updateTransforms(time, delta_time) {
-        const { prp, srp, vup, clip } = this.scene.view;
+        // repeat for each model
+        for (let i = 0; i < this.scene.models.length; i++) {
+            // check for animation property in the model
+            if (!this.scene.models[i].hasOwnProperty("animation")) {
+                continue;
+            }
+
+            // find models vertices
+            let vertices = this.scene.models[i].vertices;
+
+            // set the axis for rotation
+            let axis = this.scene.models[i].animation[0];
+            let axisX = 0, axisY = 0, axisZ = 0;
+            if (axis.includes("x")) {
+                axisX = 1;
+            }
+            if (axis.includes("y")) {
+                axisY = 1;
+            }
+            if (axis.includes("z")) {
+                axisZ = 1;
+            }
+            
+
+            // find the center of the object
+            let centerX = 0, centerY = 0, centerZ = 0;
+            for (let j = 0; j < vertices.length; j++) {
+                centerX += vertices[j].x;
+                centerY += vertices[j].y;
+                centerZ += vertices[j].z;
+            }
+            centerX /= vertices.length;
+            centerY /= vertices.length;
+            centerZ /= vertices.length;
+
+            // define rotation axis and speed
+            let rps = this.scene.models[i].animation[1];
+            let rotationSpeed = Math.PI * 2 * rps;
+
+            // current angle
+            let angle = rotationSpeed * delta_time / 1000;
+
+            // rotate each point
+            for (let j = 0; j < vertices.length; j++) {
+                let cosTheta = Math.cos(angle);
+                let sinTheta = Math.sin(angle);
+                
+                // move each point back to center
+                let x = vertices[j].x - centerX;
+                let y = vertices[j].y - centerY;
+                let z = vertices[j].z - centerZ;
+
+                // calculate new points using Rodrigues rotation formula
+                let newX = (cosTheta + (1 - cosTheta) * axisX * axisX) * x + ((1 - cosTheta) * axisX * axisY - sinTheta * axisZ) * y + ((1 - cosTheta) * axisX * axisZ + sinTheta * axisY) * z;
+                let newY = ((1 - cosTheta) * axisY * axisX + sinTheta * axisZ) * x + (cosTheta + (1 - cosTheta) * axisY * axisY) * y + ((1 - cosTheta) * axisY * axisZ - sinTheta * axisX) * z;
+                let newZ = ((1 - cosTheta) * axisZ * axisX - sinTheta * axisY) * x + ((1 - cosTheta) * axisZ * axisY + sinTheta * axisX) * y + (cosTheta + (1 - cosTheta) * axisZ * axisZ) * z;
+
+                // move each point to original spot
+                vertices[j].x = newX + centerX;
+                vertices[j].y = newY + centerY;
+                vertices[j].z = newZ + centerZ;
+            }
+            // replace vertices array
+            this.scene.models[i].vertices = vertices;
+        }
         
         this.draw();
     }
@@ -252,11 +316,8 @@ class Renderer {
         //     * project to 2D
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
-
         const { prp, srp, vup, clip } = this.scene.view;
-
         let transformMat = CG.mat4x4Perspective(prp, srp, vup, clip);
-
         // Transform, project, and draw each model
         this.scene.models.forEach(model => {
             // Transform and project vertices
@@ -393,11 +454,6 @@ class Renderer {
                             1
                         )
                     );
-                    if (scene.models[i].hasOwnProperty("animation")) {
-                        model.animation = JSON.parse(
-                            JSON.stringify(scene.models[i].animation)
-                        );
-                    }
                 }
             } else if (model.type === "cube") {
                 const { center, width, height, depth } = scene.models[i];
@@ -524,6 +580,11 @@ class Renderer {
                         model[key] = JSON.parse(JSON.stringify(scene.models[i][key]));
                     }
                 }
+            }
+            if (scene.models[i].hasOwnProperty("animation")) {
+                model.animation = JSON.parse(
+                    JSON.stringify(scene.models[i].animation)
+                );
             }
 
             model.matrix = new Matrix(4, 4);

@@ -18,7 +18,8 @@
       "center": [0, 3, -14],
       "radius": 3.5,
       "slices": 18,
-      "stacks": 15
+      "stacks": 15,
+      "animation": ["x", 0.5]
     }
   ]
 }
