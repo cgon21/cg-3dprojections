@@ -11,7 +11,8 @@
       "center": [-14, 4, -10],
       "width": 8,
       "height": 8,
-      "depth": 8
+      "depth": 8,
+      "animation": ["xy", 0.1]
     },
     {
       "type": "cylinder",
@@ -19,10 +20,7 @@
       "radius": 3.5,
       "height": 7,
       "sides": 12,
-      "animation": {
-        "axis": "y",
-        "rps": 0.5
-      }
+      "animation": ["x", -0.5]
     }
   ]
 }
