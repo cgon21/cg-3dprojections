@@ -575,7 +575,7 @@ class Renderer {
                 }
             }
             else {
-                model.center = Vector4(
+                model.center = CG.Vector4(
                     scene.models[i].center[0],
                     scene.models[i].center[1],
                     scene.models[i].center[2],
