@@ -318,22 +318,40 @@ class Renderer {
         //     * draw line
         const { prp, srp, vup, clip } = this.scene.view;
         let transformMat = CG.mat4x4Perspective(prp, srp, vup, clip);
-        // Transform, project, and draw each model
+        let z_min = clip[5];
+
+        // For each model in the scene
         this.scene.models.forEach(model => {
-            // Transform and project vertices
-            let newVertices = model.vertices.map(vertex => {
-                let newVertex = Matrix.multiply([transformMat, vertex]);
-                let newVertexCartX = (newVertex.x / newVertex.w + 1) * this.canvas.width / 2;
-                let newVertexCartY = (newVertex.y / newVertex.w + 1) * this.canvas.height / 2;
-                return { x: newVertexCartX, y: newVertexCartY };
+            // For each vertex in the model
+            let transformedVertices = model.vertices.map(vertex => {
+                // Transform endpoints to canonical view volume
+                return Matrix.multiply([transformMat, vertex]);
             });
-            // Draw edges based on the projected vertices
-            model.edges.forEach((edge) => {
+
+            // For each line in the model
+            model.edges.forEach(edge => {
                 for (let i = 0; i < edge.length - 1; i++) {
-                    let startVertex = newVertices[edge[i]];
-                    let endVertex = newVertices[edge[i + 1]];
-                    // Draw line from startVertex to endVertex
-                    this.drawLine(startVertex.x, startVertex.y, endVertex.x, endVertex.y);
+                    let line = {
+                        pt0: transformedVertices[edge[i]],
+                        pt1: transformedVertices[edge[i + 1]]
+                    };
+
+                    // Clip the line against the view volume
+                    let clippedLine = this.clipLinePerspective(line, z_min);
+                    if (clippedLine) {
+                        // project to 2D and translate/scale to viewport (i.e. window)
+                        let startVertex = {
+                            x: (clippedLine.pt0.x / clippedLine.pt0.w + 1) * this.canvas.width / 2,
+                            y: (clippedLine.pt0.y / clippedLine.pt0.w + 1) * this.canvas.height / 2
+                        };
+                        let endVertex = {
+                            x: (clippedLine.pt1.x / clippedLine.pt1.w + 1) * this.canvas.width / 2,
+                            y: (clippedLine.pt1.y / clippedLine.pt1.w + 1) * this.canvas.height / 2
+                        };
+
+                        // Draw the clipped line segment
+                        this.drawLine(startVertex.x, startVertex.y, endVertex.x, endVertex.y);
+                    }
                 }
             });
         });
@@ -370,16 +388,23 @@ class Renderer {
     // line:         object {pt0: Vector4, pt1: Vector4}
     // z_min:        float (near clipping plane in canonical view volume)
     clipLinePerspective(line, z_min) {
-        let result = null;
-        let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);
-        let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
+        let p0 = new CG.Vector4(line.pt0.x, line.pt0.y, line.pt0.z, line.pt0.w);
+        let p1 = new CG.Vector4(line.pt1.x, line.pt1.y, line.pt1.z, line.pt1.w);
         let out0 = this.outcodePerspective(p0, z_min);
         let out1 = this.outcodePerspective(p1, z_min);
 
-        // TODO: implement clipping here!
+        // Inside
+        if ((out0 | out1) === 0) {
+            return { pt0: p0, pt1: p1 };
+        }
 
-        return result;
+        // Outside
+        else if ((out0 & out1) !== 0) {
+            return null;
+        }
     }
+
+
 
     //
     animate(timestamp) {
